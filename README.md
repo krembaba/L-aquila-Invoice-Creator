@@ -30,4 +30,3 @@ python invoice_generator.py --json example_invoice.json --out test.docx   # prev
 ## Changing company details
 
 Open `invoice_template.docx` in Word and edit the text (address, bank account, logo).
-Don't change anything written in `{{BRACKETS}}` — those are filled in by the program.
