@@ -11,7 +11,9 @@ Python 3.9+ for Windows from [python.org](https://www.python.org/downloads/) —
 ## Making an invoice
 
 1. Double-click **`Create Invoice.bat`**.
-2. Pick a saved client (or type a new one), check the date and invoice number.
+2. Pick a saved client (or type a new one), check the date and invoice number, and choose the
+   invoice language at the top: **Shqip**, **English** or **Srpski**. Each client remembers the
+   language last used for them. Item descriptions are printed exactly as typed.
 3. Add the items: description, quantity, unit price. Totals and 18% VAT update as you type.
 4. Click **Create invoice** (or press Ctrl+Enter), then **Open** to see it in Word.
 
@@ -26,6 +28,9 @@ uploaded to GitHub.
 python invoice_generator.py --json example_invoice.json
 python invoice_generator.py --json example_invoice.json --out test.docx   # preview only, no numbering/log
 ```
+
+Add `"language": "en"` (or `"sq"`, `"sr"`) to the JSON to pick the invoice language.
+The labels for each language are in `LABELS` near the top of `invoice_generator.py`.
 
 ## Changing company details
 

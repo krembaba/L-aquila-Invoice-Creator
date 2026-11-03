@@ -34,7 +34,44 @@ LAST_MANUAL_NUMBER = {2026: 134}
 
 LOG_FIELDS = ["created", "date", "year", "number", "invoice_no", "client",
               "subtotal", "vat", "total", "file"]
-CLIENT_FIELDS = ["name", "short_name", "nui", "address", "city", "email"]
+CLIENT_FIELDS = ["name", "short_name", "nui", "address", "city", "email", "language"]
+
+# Invoice languages. Each label fills a {{L_*}} slot in the template; the Albanian set is
+# the original invoice word for word (including its English payment/total labels).
+LANGUAGES = {"sq": "Shqip", "en": "English", "sr": "Srpski"}
+DEFAULT_LANGUAGE = "sq"
+LABELS = {
+    "sq": {
+        "L_COMPANY_NUI": "NUI:", "L_COMPANY_VAT_NO": "Nr. TVSH: ", "L_COMPANY_ADDRESS": "Adresa: ",
+        "L_TITLE": " FATURË", "L_BILL_TO": "FATURË PËR:", "L_DATE": "Data :", "L_INVOICE_NO": "Fatura Nr :",
+        "L_CLIENT_NUI": "NUI: ", "L_ADDRESS": "Adresa: ",
+        "L_COL_DESC": "PËRSHKRIMI", "L_COL_QTY": "SASIA", "L_COL_PRICE": "ÇMIMI", "L_COL_VAT": "TVSH",
+        "L_COL_TOTAL": "TOTALI ",
+        "L_PAYMENT": "Payment method", "L_SWIFT": "SWIFT code: ", "L_ACCOUNT": "   Account no:     ",
+        "L_SUBTOTAL": "Sub-total:", "L_VAT": " VAT:", "L_TOTAL": "Total :",
+        "L_SIGNATURE": "Signature:", "L_RECEIVED": "Received: ",
+    },
+    "en": {
+        "L_COMPANY_NUI": "Business ID: ", "L_COMPANY_VAT_NO": "VAT No.: ", "L_COMPANY_ADDRESS": "Address: ",
+        "L_TITLE": "INVOICE", "L_BILL_TO": "BILL TO:", "L_DATE": "Date: ", "L_INVOICE_NO": "Invoice No: ",
+        "L_CLIENT_NUI": "Business ID: ", "L_ADDRESS": "Address: ",
+        "L_COL_DESC": "DESCRIPTION", "L_COL_QTY": "QTY", "L_COL_PRICE": "PRICE", "L_COL_VAT": "VAT",
+        "L_COL_TOTAL": "TOTAL",
+        "L_PAYMENT": "Payment method", "L_SWIFT": "SWIFT code: ", "L_ACCOUNT": "   Account no:     ",
+        "L_SUBTOTAL": "Sub-total:", "L_VAT": " VAT:", "L_TOTAL": "Total: ",
+        "L_SIGNATURE": "Signature:", "L_RECEIVED": "Received: ",
+    },
+    "sr": {
+        "L_COMPANY_NUI": "JIB: ", "L_COMPANY_VAT_NO": "PDV br.: ", "L_COMPANY_ADDRESS": "Adresa: ",
+        "L_TITLE": "FAKTURA", "L_BILL_TO": "KUPAC:", "L_DATE": "Datum: ", "L_INVOICE_NO": "Faktura br.: ",
+        "L_CLIENT_NUI": "JIB: ", "L_ADDRESS": "Adresa: ",
+        "L_COL_DESC": "OPIS", "L_COL_QTY": "KOL.", "L_COL_PRICE": "CENA", "L_COL_VAT": "PDV",
+        "L_COL_TOTAL": "UKUPNO",
+        "L_PAYMENT": "Način plaćanja", "L_SWIFT": "SWIFT kod: ", "L_ACCOUNT": "   Broj računa:     ",
+        "L_SUBTOTAL": "Osnovica:", "L_VAT": " PDV:", "L_TOTAL": "Ukupno: ",
+        "L_SIGNATURE": "Potpis:", "L_RECEIVED": "Primio: ",
+    },
+}
 # Client lines that disappear from the invoice when left empty.
 OPTIONAL_PARAGRAPHS = ["CLIENT_NUI", "CLIENT_ADDRESS", "CLIENT_CITY", "CLIENT_EMAIL"]
 # Empty paragraphs under the items table; one is dropped per extra item so the page holds.
@@ -142,8 +179,9 @@ def render(invoice, out_path):
         "SUBTOTAL": money(subtotal),
         "VAT_TOTAL": money(vat_total),
         "GRAND_TOTAL": money(total),
+        **LABELS[invoice.get("language") or DEFAULT_LANGUAGE],
     }
-    rows = "".join(fill(row, {
+    rows ="".join(fill(row, {
         "ITEM_NO": f"{n}.",
         "ITEM_DESC": line["description"],
         "ITEM_QTY": qty_text(line["qty"]),
@@ -192,12 +230,13 @@ def short_name_for(client):
     return client.get("short_name", "").strip() or " ".join(client["name"].split()[:2])
 
 
-def create_invoice(client, date_text, number, items, vat_rate=DEFAULT_VAT):
+def create_invoice(client, date_text, number, items, vat_rate=DEFAULT_VAT, language=DEFAULT_LANGUAGE):
     """Numbered, logged invoice in Faturat/. Returns the saved path."""
     year = parse_date(date_text).year
     path = output_path(number, year, short_name_for(client))
+    client = dict(client, language=language)  # remembered as this client's language
     invoice = {"client": client, "invoice_no": f"{number:04d}/{year}", "date": date_text,
-               "vat_rate": vat_rate, "items": items}
+               "vat_rate": vat_rate, "items": items, "language": language}
     subtotal, vat, total = render(invoice, path)
 
     new_log = not LOG_FILE.exists()
@@ -345,6 +384,23 @@ def run_gui():
     ttk.Button(header, text="Open invoices folder", style="Ghost.TButton",
                command=lambda: open_folder()).pack(side="right", padx=px(24))
 
+    # language switch: Shqip | English | Srpski
+    language_var = tk.StringVar(value=DEFAULT_LANGUAGE)
+    language_box = tk.Frame(header, bg=CARD)
+    language_box.pack(side="right", padx=(0, px(8)))
+    label(language_box, "Invoice language", 9, MUTED).pack(anchor="w")
+    segments_frame = tk.Frame(language_box, bg=CARD, highlightthickness=1,
+                              highlightbackground=FIELD_BORDER, highlightcolor=FIELD_BORDER)
+    segments_frame.pack(anchor="w", pady=(px(2), 0))
+    segments = {}
+    for code, name in LANGUAGES.items():
+        segment = label(segments_frame, name, 10, cursor="hand2", width=8, pady=px(5))
+        segment.pack(side="left")
+        segment.bind("<Button-1>", lambda _e, c=code: language_var.set(c))
+        segment.bind("<Enter>", lambda _e, c=code: c != language_var.get() and segments[c].config(bg=GREEN_SOFT))
+        segment.bind("<Leave>", lambda _e: paint_language())
+        segments[code] = segment
+
     body = tk.Frame(root, bg=BG)
     body.pack(fill="both", expand=True, padx=px(20), pady=px(18))
     body.columnconfigure(0, weight=1)
@@ -354,7 +410,8 @@ def run_gui():
     side.grid(row=0, column=1, rowspan=2, sticky="nsew")
 
     # ---- client card
-    client_vars = {k: tk.StringVar() for k in CLIENT_FIELDS}
+    client_vars = {k: tk.StringVar() for k in CLIENT_FIELDS if k != "language"}
+    client_vars["language"] = language_var  # remembered per client
     client_card, client_inner = card(body, "Client", ("Clear", lambda: new_client()))
     client_card.grid(row=0, column=0, sticky="nsew", padx=(0, px(16)), pady=(0, px(16)))
     client_grid = tk.Frame(client_inner, bg=CARD)
@@ -470,7 +527,17 @@ def run_gui():
         match = next((c for c in load_clients() if c["name"].lower() == typed), None)
         if match:
             for key in CLIENT_FIELDS:
-                client_vars[key].set(match.get(key, ""))
+                if key != "language" or match.get(key):  # older clients have no language saved
+                    client_vars[key].set(match.get(key, ""))
+
+    def paint_language(*_):
+        if language_var.get() not in LANGUAGES:
+            language_var.set(DEFAULT_LANGUAGE)
+            return
+        for code, segment in segments.items():
+            chosen = code == language_var.get()
+            segment.config(bg=GREEN if chosen else CARD, fg="white" if chosen else TEXT,
+                           font=(FONT, 10, "bold" if chosen else "normal"))
 
     def filter_clients(event):
         if event.keysym in ("Up", "Down", "Return", "Escape", "Tab"):
@@ -654,7 +721,7 @@ def run_gui():
                 "Number already used", f"Invoice {number:04d}/{year} was already created.\nCreate it again anyway?"):
             return
         try:
-            path = create_invoice(client, date_var.get().strip(), number, items, vat_rate)
+            path = create_invoice(client, date_var.get().strip(), number, items, vat_rate, language_var.get())
         except PermissionError:
             return show_status("That invoice is open in Word - close it and try again.", "error")
         name_box.config(values=client_names())
@@ -678,11 +745,13 @@ def run_gui():
     canvas.bind("<Enter>", lambda _e: canvas.bind_all("<MouseWheel>", wheel))
     canvas.bind("<Leave>", lambda _e: canvas.unbind_all("<MouseWheel>"))
     vat_var.trace_add("write", recalc)
+    language_var.trace_add("write", paint_language)
     date_var.trace_add("write", update_subtitle)
     number_var.trace_add("write", update_subtitle)
     root.bind("<Control-Return>", create)
 
     add_row()
+    paint_language()
     update_subtitle()
     refresh_recent()
     name_box.focus_set()
@@ -702,15 +771,18 @@ def run_json(json_path, out=None):
     year = parse_date(date_text).year
     number = int(data.get("number") or next_number(year))
     vat_rate = parse_number(data.get("vat_rate", DEFAULT_VAT))
+    language = data.get("language") or client.get("language") or DEFAULT_LANGUAGE
+    if language not in LABELS:
+        sys.exit(f"Unknown language '{language}' - use one of: {', '.join(LABELS)}.")
     if out:
         invoice = {"client": client, "invoice_no": f"{number:04d}/{year}", "date": date_text,
-                   "vat_rate": vat_rate, "items": data["items"]}
+                   "vat_rate": vat_rate, "items": data["items"], "language": language}
         render(invoice, out)
         print(out)
     elif number_used(year, number):
         sys.exit(f"Invoice {number:04d}/{year} was already created - see invoices.csv.")
     else:
-        print(create_invoice(client, date_text, number, data["items"], vat_rate))
+        print(create_invoice(client, date_text, number, data["items"], vat_rate, language))
 
 
 if __name__ == "__main__":
