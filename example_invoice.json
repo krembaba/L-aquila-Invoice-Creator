@@ -1,0 +1,19 @@
+{
+  "client": {
+    "name": "Shembull SH.P.K.",
+    "short_name": "SHEMBULL",
+    "nui": "810000000",
+    "address": "Rr. Shembull 1",
+    "city": "Prishtinë – Kosovë",
+    "email": "info@shembull.com"
+  },
+  "date": "03/11/2026",
+  "vat_rate": 18,
+  "items": [
+    {
+      "description": "Kryerja e shërbimeve me vinç në vendpunishten e klientit, për 2 ditë pune, me çmim prej 500.00 € për ditë",
+      "qty": 2,
+      "unit_price": 500
+    }
+  ]
+}

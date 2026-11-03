@@ -1,0 +1,10 @@
+# Real business data - stays on this computer only
+Faturat/
+invoices.csv
+clients.json
+
+# Python / Word leftovers
+__pycache__/
+*.pyc
+*.tmp
+~$*.docx
