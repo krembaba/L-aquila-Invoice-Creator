@@ -3,6 +3,9 @@ Faturat/
 invoices.csv
 clients.json
 
+# Built program - share it via GitHub Releases, not in the code (build with build_exe.bat)
+Invoice Creator.exe
+
 # Python / Word leftovers
 __pycache__/
 *.pyc

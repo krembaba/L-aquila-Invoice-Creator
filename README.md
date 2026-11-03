@@ -3,14 +3,29 @@
 Creates L'AQUILA Company invoices (Word `.docx`) from a simple form, using
 `invoice_template.docx` as the layout.
 
-## Requirements
+## Using it on any computer (no Python needed)
 
-Python 3.9+ for Windows from [python.org](https://www.python.org/downloads/) — tick
-**"Add python.exe to PATH"** when installing. Nothing else to install.
+Copy **`Invoice Creator.exe`** into a folder on that computer (e.g. a folder on the Desktop)
+and double-click it. Python is built in, and so is the invoice template. Invoices, the log
+and the client list are created next to the `.exe`.
+
+The first time, Windows may show *"Windows protected your PC"* because the program isn't
+from a known publisher: click **More info → Run anyway**.
+
+To use your own edited template, put `invoice_template.docx` next to the `.exe` — it is
+used instead of the built-in one.
+
+## Running from the code
+
+Needs Python 3.9+ from [python.org](https://www.python.org/downloads/). Double-click
+**`Create Invoice.bat`** — it uses `Invoice Creator.exe` if it's in the folder, otherwise it
+finds Python on its own.
+
+To make a new `.exe` after changing the code, double-click **`build_exe.bat`**.
 
 ## Making an invoice
 
-1. Double-click **`Create Invoice.bat`**.
+1. Open the program (`Invoice Creator.exe` or `Create Invoice.bat`).
 2. Pick a saved client (or type a new one), check the date and invoice number, and choose the
    invoice language at the top: **Shqip**, **English** or **Srpski**. Each client remembers the
    language last used for them. Item descriptions are printed exactly as typed.

@@ -22,8 +22,15 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-HERE = Path(__file__).resolve().parent
+if getattr(sys, "frozen", False):  # running as Invoice Creator.exe
+    HERE = Path(sys.executable).resolve().parent  # invoices, log and clients live next to the .exe
+    BUNDLED = Path(sys._MEIPASS)                  # template packed inside the .exe
+else:
+    HERE = BUNDLED = Path(__file__).resolve().parent
+# A template next to the program wins, so the company details can be edited without rebuilding.
 TEMPLATE = HERE / "invoice_template.docx"
+if not TEMPLATE.exists():
+    TEMPLATE = BUNDLED / "invoice_template.docx"
 CLIENTS_FILE = HERE / "clients.json"
 LOG_FILE = HERE / "invoices.csv"
 OUTPUT_DIR = HERE / "Faturat"
